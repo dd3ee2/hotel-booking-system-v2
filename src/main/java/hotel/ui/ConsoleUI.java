@@ -1,28 +1,35 @@
 package hotel.ui;
 
 import hotel.controller.BookingController;
-import hotel.repository.RoomRepository;
 
 import java.util.Scanner;
 
 public class ConsoleUI {
 
-    private final RoomRepository roomRepository = new RoomRepository();
-    private final BookingController bookingController = new BookingController();
+    private final BookingController controller = new BookingController();
     private final Scanner scanner = new Scanner(System.in);
 
     public void start() {
         while (true) {
             System.out.println("\n=== Hotel Booking System ===");
-            System.out.println("1. Show rooms");
+            System.out.println("1. Show all rooms");
             System.out.println("2. Book a room");
+            System.out.println("3. Show available rooms");
+            System.out.println("4. Cancel booking (free a room)");
+            System.out.println("5. Show all bookings");
             System.out.println("0. Exit");
             System.out.print("Choose option: ");
 
-            int choice = Integer.parseInt(scanner.nextLine());
+            int choice;
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (Exception e) {
+                System.out.println("Please enter a number.");
+                continue;
+            }
 
             if (choice == 1) {
-                roomRepository.getAllRooms().forEach(System.out::println);
+                controller.showAllRooms();
 
             } else if (choice == 2) {
                 System.out.print("Enter room number: ");
@@ -34,8 +41,21 @@ public class ConsoleUI {
                 System.out.print("Enter customer email: ");
                 String email = scanner.nextLine();
 
-                String result = bookingController.bookRoom(roomNumber, name, email);
-                System.out.println(result);
+                System.out.print("Enter nights: ");
+                int nights = Integer.parseInt(scanner.nextLine());
+
+                System.out.println(controller.bookRoom(roomNumber, name, email, nights));
+
+            } else if (choice == 3) {
+                controller.showAvailableRooms();
+
+            } else if (choice == 4) {
+                System.out.print("Enter room number to cancel: ");
+                int roomNumber = Integer.parseInt(scanner.nextLine());
+                System.out.println(controller.cancelBooking(roomNumber));
+
+            } else if (choice == 5) {
+                controller.showAllBookings();
 
             } else if (choice == 0) {
                 System.out.println("Goodbye!");

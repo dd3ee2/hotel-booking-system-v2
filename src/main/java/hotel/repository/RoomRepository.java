@@ -37,6 +37,33 @@ public class RoomRepository {
         return rooms;
     }
 
+    public List<Room> getAvailableRooms() {
+        List<Room> rooms = new ArrayList<>();
+        String sql = "SELECT id, room_number, room_type, price_per_night, is_available " +
+                "FROM rooms WHERE is_available = true ORDER BY id";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Room room = new Room(
+                        rs.getInt("id"),
+                        rs.getInt("room_number"),
+                        rs.getString("room_type"),
+                        rs.getDouble("price_per_night"),
+                        rs.getBoolean("is_available")
+                );
+                rooms.add(room);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("getAvailableRooms failed: " + e.getMessage(), e);
+        }
+
+        return rooms;
+    }
+
     public Room findByRoomNumber(int roomNumber) {
         String sql = "SELECT id, room_number, room_type, price_per_night, is_available FROM rooms WHERE room_number = ?";
 
