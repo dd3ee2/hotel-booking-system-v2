@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RoomRepository {
+public class    RoomRepository {
 
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();

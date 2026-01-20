@@ -1,73 +1,50 @@
-package hotel.entity;
+package hotel.repository;
 
-public class Room {
-    private int id;
-    private int roomNumber;
-    private String roomType;
-    private double pricePerNight;
-    private boolean isAvailable;
+import hotel.db.DatabaseConnection;
 
-    public Room() {
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+public class CustomerRepository {
+
+    public Integer findCustomerIdByEmail(String email) {
+        String sql = "SELECT id FROM customers WHERE email = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("findCustomerIdByEmail failed: " + e.getMessage(), e);
+        }
+
+        return null;
     }
 
-    public Room(int id, int roomNumber, String roomType, double pricePerNight, boolean isAvailable) {
-        this.id = id;
-        this.roomNumber = roomNumber;
-        this.roomType = roomType;
-        this.pricePerNight = pricePerNight;
-        this.isAvailable = isAvailable;
-    }
+    public int createCustomer(String name, String email) {
+        String sql = "INSERT INTO customers(name, email) VALUES (?, ?) RETURNING id";
 
-    // getters
-    public int getId() {
-        return id;
-    }
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    public int getRoomNumber() {
-        return roomNumber;
-    }
+            ps.setString(1, name);
+            ps.setString(2, email);
 
-    public String getRoomType() {
-        return roomType;
-    }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt("id");
+            }
 
-    public double getPricePerNight() {
-        return pricePerNight;
-    }
-
-    public boolean isAvailable() {
-        return isAvailable;
-    }
-
-    // setters
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setRoomNumber(int roomNumber) {
-        this.roomNumber = roomNumber;
-    }
-
-    public void setRoomType(String roomType) {
-        this.roomType = roomType;
-    }
-
-    public void setPricePerNight(double pricePerNight) {
-        this.pricePerNight = pricePerNight;
-    }
-
-    public void setAvailable(boolean available) {
-        isAvailable = available;
-    }
-
-    @Override
-    public String toString() {
-        return "Room{" +
-                "id=" + id +
-                ", roomNumber=" + roomNumber +
-                ", roomType='" + roomType + '\'' +
-                ", pricePerNight=" + pricePerNight +
-                ", isAvailable=" + isAvailable +
-                '}';
+        } catch (Exception e) {
+            throw new RuntimeException("createCustomer failed: " + e.getMessage(), e);
+        }
     }
 }
