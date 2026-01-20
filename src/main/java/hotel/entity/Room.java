@@ -1,50 +1,60 @@
-package hotel.repository;
+package hotel.entity;
 
-import hotel.db.DatabaseConnection;
+public class Room {
+    private int id;
+    private int roomNumber;
+    private String roomType;
+    private double pricePerNight;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
-public class CustomerRepository {
-
-    public Integer findCustomerIdByEmail(String email) {
-        String sql = "SELECT id FROM customers WHERE email = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("id");
-                }
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("findCustomerIdByEmail failed: " + e.getMessage(), e);
-        }
-
-        return null;
+    public Room() {
     }
 
-    public int createCustomer(String name, String email) {
-        String sql = "INSERT INTO customers(name, email) VALUES (?, ?) RETURNING id";
+    public Room(int id, int roomNumber, String roomType, double pricePerNight) {
+        this.id = id;
+        this.roomNumber = roomNumber;
+        this.roomType = roomType;
+        this.pricePerNight = pricePerNight;
+    }
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public int getId() {
+        return id;
+    }
 
-            ps.setString(1, name);
-            ps.setString(2, email);
+    public int getRoomNumber() {
+        return roomNumber;
+    }
 
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt("id");
-            }
+    public String getRoomType() {
+        return roomType;
+    }
 
-        } catch (Exception e) {
-            throw new RuntimeException("createCustomer failed: " + e.getMessage(), e);
-        }
+    public double getPricePerNight() {
+        return pricePerNight;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setRoomNumber(int roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public void setRoomType(String roomType) {
+        this.roomType = roomType;
+    }
+
+    public void setPricePerNight(double pricePerNight) {
+        this.pricePerNight = pricePerNight;
+    }
+
+    @Override
+    public String toString() {
+        return "Room{" +
+                "id=" + id +
+                ", roomNumber=" + roomNumber +
+                ", roomType='" + roomType + '\'' +
+                ", pricePerNight=" + pricePerNight +
+                '}';
     }
 }
