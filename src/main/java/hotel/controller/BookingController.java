@@ -5,6 +5,9 @@ import hotel.repository.BookingRepository;
 import hotel.repository.CustomerRepository;
 import hotel.repository.RoomRepository;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 public class BookingController {
 
     private final RoomRepository roomRepository = new RoomRepository();
@@ -15,60 +18,66 @@ public class BookingController {
         roomRepository.getAllRooms().forEach(System.out::println);
     }
 
-    public void showAvailableRooms() {
-        roomRepository.getAvailableRooms().forEach(System.out::println);
+    public void showAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
+        if (!checkOut.isAfter(checkIn)) {
+            System.out.println("Invalid dates.");
+            return;
+        }
+
+        roomRepository.getAvailableRoomsForDates(checkIn, checkOut)
+                .forEach(System.out::println);
     }
 
     public void showAllBookings() {
-        bookingRepository.getAllBookingsDetails().forEach(System.out::println);
+        bookingRepository.getAllBookingsDetails()
+                .forEach(System.out::println);
     }
 
-    public String bookRoom(int roomNumber, String customerName, String customerEmail, int nights) {
+    public String bookRoom(int roomNumber, String name, String email,
+                           LocalDate checkIn, LocalDate checkOut) {
 
-        if (nights <= 0) {
-            return "Nights must be greater than 0.";
+        if (!checkOut.isAfter(checkIn)) {
+            return "Invalid dates.";
         }
 
         Room room = roomRepository.findByRoomNumber(roomNumber);
         if (room == null) return "Room not found.";
 
-        if (!room.isAvailable()) return "Room is already booked.";
-
-        Integer customerId = customerRepository.findCustomerIdByEmail(customerEmail);
-        if (customerId == null) {
-            customerId = customerRepository.createCustomer(customerName, customerEmail);
+        if (!bookingRepository.isRoomAvailableForDates(room.getId(), checkIn, checkOut)) {
+            return "Room is not available.";
         }
 
-        int bookingId = bookingRepository.createBooking(customerId, room.getId());
-        roomRepository.setAvailability(room.getId(), false);
+        Integer customerId = customerRepository.findCustomerIdByEmail(email);
+        if (customerId == null) {
+            customerId = customerRepository.createCustomer(name, email);
+        }
 
+        int bookingId = bookingRepository.createBooking(
+                customerId, room.getId(), checkIn, checkOut
+        );
+
+        long nights = bookingRepository.calculateNights(checkIn, checkOut);
         double total = nights * room.getPricePerNight();
 
-        return "Room booked successfully! Booking ID = " + bookingId +
-                "\n--- Invoice ---" +
-                "\nRoom: " + room.getRoomNumber() + " (" + room.getRoomType() + ")" +
-                "\nPrice per night: " + room.getPricePerNight() +
-                "\nNights: " + nights +
-                "\nTotal: " + total;
+        return "Booked. ID=" + bookingId + ", total=" + total;
     }
 
     public String cancelBooking(int roomNumber) {
         Room room = roomRepository.findByRoomNumber(roomNumber);
         if (room == null) return "Room not found.";
 
-        if (room.isAvailable()) {
-            return "Room is already available (no active booking).";
-        }
-
-        Integer bookingId = bookingRepository.findLatestBookingIdByRoomId(room.getId());
-        if (bookingId == null) {
-            roomRepository.setAvailability(room.getId(), true);
-            return "No booking record found, but room was set to available.";
-        }
+        Integer bookingId = bookingRepository.findActiveBookingIdByRoomId(room.getId());
+        if (bookingId == null) return "No active booking.";
 
         bookingRepository.deleteBookingById(bookingId);
-        roomRepository.setAvailability(room.getId(), true);
+        return "Booking cancelled.";
+    }
 
-        return "Booking cancelled. Room is available again.";
+    public LocalDate parseDate(String value) {
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Wrong date format");
+        }
     }
 }
