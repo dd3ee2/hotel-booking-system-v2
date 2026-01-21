@@ -6,6 +6,7 @@ import hotel.entity.Room;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class RoomRepository {
 
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
-        String sql = "SELECT id, room_number, room_type, price_per_night, is_available FROM rooms ORDER BY id";
+        String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms ORDER BY id";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -24,8 +25,7 @@ public class RoomRepository {
                         rs.getInt("id"),
                         rs.getInt("room_number"),
                         rs.getString("room_type"),
-                        rs.getDouble("price_per_night"),
-                        rs.getBoolean("is_available")
+                        rs.getDouble("price_per_night")
                 );
                 rooms.add(room);
             }
@@ -37,35 +37,43 @@ public class RoomRepository {
         return rooms;
     }
 
-    public List<Room> getAvailableRooms() {
+    public List<Room> getAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
         List<Room> rooms = new ArrayList<>();
-        String sql = "SELECT id, room_number, room_type, price_per_night, is_available " +
-                "FROM rooms WHERE is_available = true ORDER BY id";
+        String sql = "SELECT r.id, r.room_number, r.room_type, r.price_per_night " +
+                "FROM rooms r " +
+                "WHERE r.id NOT IN (" +
+                "    SELECT b.room_id FROM bookings b " +
+                "    WHERE b.check_out > CURRENT_DATE " + // ТОЛЬКО активные брони!
+                "    AND b.check_out > ? AND b.check_in < ?" +
+                ") ORDER BY r.id";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                Room room = new Room(
-                        rs.getInt("id"),
-                        rs.getInt("room_number"),
-                        rs.getString("room_type"),
-                        rs.getDouble("price_per_night"),
-                        rs.getBoolean("is_available")
-                );
-                rooms.add(room);
+            ps.setDate(1, java.sql.Date.valueOf(checkIn));
+            ps.setDate(2, java.sql.Date.valueOf(checkOut));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Room room = new Room(
+                            rs.getInt("id"),
+                            rs.getInt("room_number"),
+                            rs.getString("room_type"),
+                            rs.getDouble("price_per_night")
+                    );
+                    rooms.add(room);
+                }
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("getAvailableRooms failed: " + e.getMessage(), e);
+            throw new RuntimeException("getAvailableRoomsForDates failed: " + e.getMessage(), e);
         }
 
         return rooms;
     }
 
     public Room findByRoomNumber(int roomNumber) {
-        String sql = "SELECT id, room_number, room_type, price_per_night, is_available FROM rooms WHERE room_number = ?";
+        String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms WHERE room_number = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -78,8 +86,7 @@ public class RoomRepository {
                             rs.getInt("id"),
                             rs.getInt("room_number"),
                             rs.getString("room_type"),
-                            rs.getDouble("price_per_night"),
-                            rs.getBoolean("is_available")
+                            rs.getDouble("price_per_night")
                     );
                 }
             }
@@ -89,20 +96,5 @@ public class RoomRepository {
         }
 
         return null;
-    }
-
-    public void setAvailability(int roomId, boolean available) {
-        String sql = "UPDATE rooms SET is_available = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setBoolean(1, available);
-            ps.setInt(2, roomId);
-            ps.executeUpdate();
-
-        } catch (Exception e) {
-            throw new RuntimeException("setAvailability failed: " + e.getMessage(), e);
-        }
     }
 }
