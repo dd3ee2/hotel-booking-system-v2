@@ -21,9 +21,8 @@ public class CustomerRepository implements ICustomerRepository {
 
             ps.setString(1, email);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("id");
-            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("id");
 
         } catch (Exception e) {
             log.warning("findCustomerIdByEmail error: " + e.getMessage());
@@ -43,10 +42,9 @@ public class CustomerRepository implements ICustomerRepository {
             ps.setString(1, name);
             ps.setString(2, email);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt("id");
-            }
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt("id");
 
         } catch (Exception e) {
             log.warning("createCustomer error: " + e.getMessage());
