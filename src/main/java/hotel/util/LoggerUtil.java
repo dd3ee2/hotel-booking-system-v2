@@ -9,8 +9,7 @@ public class LoggerUtil {
 
     private static Logger logger;
 
-    private LoggerUtil() {
-    }
+    private LoggerUtil() {}
 
     public static Logger getLogger() {
         if (logger == null) {
