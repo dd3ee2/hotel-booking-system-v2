@@ -1,8 +1,10 @@
 package hotel.ui;
 
 import hotel.controller.BookingController;
+import hotel.entity.Room;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleUI {
@@ -31,7 +33,8 @@ public class ConsoleUI {
 
             switch (choice) {
                 case 1:
-                    controller.showAllRooms();
+                    List<Room> rooms = controller.showAllRooms();
+                    rooms.forEach(System.out::println);
                     break;
 
                 case 2:
@@ -47,7 +50,7 @@ public class ConsoleUI {
                     break;
 
                 case 5:
-                    controller.showAllBookings();
+                    controller.showAllBookings().forEach(System.out::println);
                     break;
 
                 case 0:
@@ -68,11 +71,11 @@ public class ConsoleUI {
             System.out.print("Enter check-out date (YYYY-MM-DD): ");
             LocalDate checkOut = controller.parseDate(scanner.nextLine());
 
-            controller.showAvailableRoomsForDates(checkIn, checkOut);
+            controller.showAvailableRoomsForDates(checkIn, checkOut)
+                    .forEach(System.out::println);
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
-            System.out.println("Example date format: 2024-12-25");
         }
     }
 
@@ -98,7 +101,6 @@ public class ConsoleUI {
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
-            System.out.println("Make sure dates are in format: YYYY-MM-DD");
         }
     }
 

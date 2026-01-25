@@ -2,34 +2,30 @@ package hotel.controller;
 
 import hotel.entity.Room;
 import hotel.repository.*;
-import hotel.util.LoggerUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.logging.Logger;
+import java.util.List;
 
 public class BookingController {
-
-    private static final Logger log = LoggerUtil.getLogger();
 
     private final IRoomRepository roomRepository = new RoomRepository();
     private final IBookingRepository bookingRepository = new BookingRepository();
     private final ICustomerRepository customerRepository = new CustomerRepository();
 
-    public void showAllRooms() {
-        roomRepository.getAllRooms().forEach(System.out::println);
+    public List<Room> showAllRooms() {
+        return roomRepository.getAllRooms();
     }
 
-    public void showAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
+    public List<Room> showAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
         if (!checkOut.isAfter(checkIn)) {
-            System.out.println("Invalid dates.");
-            return;
+            throw new IllegalArgumentException("Invalid dates.");
         }
-        roomRepository.getAvailableRoomsForDates(checkIn, checkOut).forEach(System.out::println);
+        return roomRepository.getAvailableRoomsForDates(checkIn, checkOut);
     }
 
-    public void showAllBookings() {
-        bookingRepository.getAllBookingsDetails().forEach(System.out::println);
+    public List<String> showAllBookings() {
+        return bookingRepository.getAllBookingsDetails();
     }
 
     public String bookRoom(int roomNumber, String name, String email,
@@ -50,15 +46,12 @@ public class BookingController {
         Integer customerId = customerRepository.findCustomerIdByEmail(email);
         if (customerId == null) {
             customerId = customerRepository.createCustomer(name, email);
-            log.info("Customer created: " + email);
         }
 
         int bookingId = bookingRepository.createBooking(customerId, room.getId(), checkIn, checkOut);
 
         long nights = bookingRepository.calculateNights(checkIn, checkOut);
         double total = nights * room.getPricePerNight();
-
-        log.info("Booking created. id=" + bookingId + ", room=" + roomNumber);
 
         return "Booked. ID=" + bookingId + ", total=" + total;
     }
@@ -71,8 +64,6 @@ public class BookingController {
         if (bookingId == null) return "No active booking.";
 
         bookingRepository.deleteBookingById(bookingId);
-        log.info("Booking cancelled. id=" + bookingId + ", room=" + roomNumber);
-
         return "Booking cancelled.";
     }
 
