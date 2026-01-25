@@ -26,12 +26,13 @@ public class RoomRepository implements IRoomRepository {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                rooms.add(new Room(
+                Room room = new Room(
                         rs.getInt("id"),
                         rs.getInt("room_number"),
                         rs.getString("room_type"),
                         rs.getDouble("price_per_night")
-                ));
+                );
+                rooms.add(room);
             }
 
         } catch (Exception e) {
@@ -51,15 +52,14 @@ public class RoomRepository implements IRoomRepository {
 
             ps.setInt(1, roomNumber);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new Room(
-                            rs.getInt("id"),
-                            rs.getInt("room_number"),
-                            rs.getString("room_type"),
-                            rs.getDouble("price_per_night")
-                    );
-                }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new Room(
+                        rs.getInt("id"),
+                        rs.getInt("room_number"),
+                        rs.getString("room_type"),
+                        rs.getDouble("price_per_night")
+                );
             }
 
         } catch (Exception e) {
@@ -89,15 +89,15 @@ public class RoomRepository implements IRoomRepository {
             ps.setDate(1, java.sql.Date.valueOf(checkIn));
             ps.setDate(2, java.sql.Date.valueOf(checkOut));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    rooms.add(new Room(
-                            rs.getInt("id"),
-                            rs.getInt("room_number"),
-                            rs.getString("room_type"),
-                            rs.getDouble("price_per_night")
-                    ));
-                }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Room room = new Room(
+                        rs.getInt("id"),
+                        rs.getInt("room_number"),
+                        rs.getString("room_type"),
+                        rs.getDouble("price_per_night")
+                );
+                rooms.add(room);
             }
 
         } catch (Exception e) {
