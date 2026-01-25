@@ -2,6 +2,7 @@ package hotel.repository;
 
 import hotel.db.DatabaseConnection;
 import hotel.entity.Room;
+import hotel.util.LoggerUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,9 +10,13 @@ import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class RoomRepository {
+public class RoomRepository implements IRoomRepository {
 
+    private static final Logger log = LoggerUtil.getLogger();
+
+    @Override
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
         String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms ORDER BY room_number";
@@ -21,22 +26,23 @@ public class RoomRepository {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Room room = new Room(
+                rooms.add(new Room(
                         rs.getInt("id"),
                         rs.getInt("room_number"),
                         rs.getString("room_type"),
                         rs.getDouble("price_per_night")
-                );
-                rooms.add(room);
+                ));
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("getAllRooms failed: " + e.getMessage());
+            log.warning("getAllRooms error: " + e.getMessage());
+            throw new RuntimeException("load rooms failed");
         }
 
         return rooms;
     }
 
+    @Override
     public Room findByRoomNumber(int roomNumber) {
         String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms WHERE room_number = ?";
 
@@ -57,12 +63,14 @@ public class RoomRepository {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("findByRoomNumber failed: " + e.getMessage());
+            log.warning("findByRoomNumber error: " + e.getMessage());
+            throw new RuntimeException("find room failed");
         }
 
         return null;
     }
 
+    @Override
     public List<Room> getAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
         List<Room> rooms = new ArrayList<>();
 
@@ -83,18 +91,18 @@ public class RoomRepository {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Room room = new Room(
+                    rooms.add(new Room(
                             rs.getInt("id"),
                             rs.getInt("room_number"),
                             rs.getString("room_type"),
                             rs.getDouble("price_per_night")
-                    );
-                    rooms.add(room);
+                    ));
                 }
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("getAvailableRoomsForDates failed: " + e.getMessage());
+            log.warning("getAvailableRoomsForDates error: " + e.getMessage());
+            throw new RuntimeException("load available rooms failed");
         }
 
         return rooms;

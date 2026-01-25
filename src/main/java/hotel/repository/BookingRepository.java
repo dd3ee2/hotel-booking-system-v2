@@ -1,14 +1,19 @@
 package hotel.repository;
 
 import hotel.db.DatabaseConnection;
+import hotel.util.LoggerUtil;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class BookingRepository {
+public class BookingRepository implements IBookingRepository {
 
+    private static final Logger log = LoggerUtil.getLogger();
+
+    @Override
     public int createBooking(int customerId, int roomId, LocalDate checkIn, LocalDate checkOut) {
         String sql = "INSERT INTO bookings(customer_id, room_id, check_in, check_out) VALUES (?, ?, ?, ?) RETURNING id";
 
@@ -20,20 +25,22 @@ public class BookingRepository {
             ps.setDate(3, Date.valueOf(checkIn));
             ps.setDate(4, Date.valueOf(checkOut));
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return rs.getInt("id");
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt("id");
+            }
 
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.warning("createBooking error: " + e.getMessage());
+            throw new RuntimeException("create booking failed");
         }
     }
 
+    @Override
     public boolean isRoomAvailableForDates(int roomId, LocalDate checkIn, LocalDate checkOut) {
         String sql =
                 "SELECT COUNT(*) FROM bookings " +
                         "WHERE room_id = ? " +
-                        "AND check_out > CURRENT_DATE " +
                         "AND NOT (check_out <= ? OR check_in >= ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -43,15 +50,18 @@ public class BookingRepository {
             ps.setDate(2, Date.valueOf(checkIn));
             ps.setDate(3, Date.valueOf(checkOut));
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return rs.getInt(1) == 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1) == 0;
+            }
 
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.warning("isRoomAvailableForDates error: " + e.getMessage());
+            throw new RuntimeException("availability check failed");
         }
     }
 
+    @Override
     public Integer findActiveBookingIdByRoomId(int roomId) {
         String sql =
                 "SELECT id FROM bookings " +
@@ -63,18 +73,19 @@ public class BookingRepository {
 
             ps.setInt(1, roomId);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("id");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
             }
 
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.warning("findActiveBookingIdByRoomId error: " + e.getMessage());
+            throw new RuntimeException("find booking failed");
         }
 
         return null;
     }
 
+    @Override
     public void deleteBookingById(int bookingId) {
         String sql = "DELETE FROM bookings WHERE id = ?";
 
@@ -85,16 +96,17 @@ public class BookingRepository {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.warning("deleteBookingById error: " + e.getMessage());
+            throw new RuntimeException("delete failed");
         }
     }
 
+    @Override
     public List<String> getAllBookingsDetails() {
         List<String> list = new ArrayList<>();
 
         String sql =
-                "SELECT b.id, b.booking_date, b.check_in, b.check_out, " +
-                        "c.name, c.email, r.room_number, r.room_type, r.price_per_night " +
+                "SELECT b.id, b.check_in, b.check_out, c.name, c.email, r.room_number " +
                         "FROM bookings b " +
                         "JOIN customers c ON b.customer_id = c.id " +
                         "JOIN rooms r ON b.room_id = r.id " +
@@ -107,21 +119,24 @@ public class BookingRepository {
             while (rs.next()) {
                 list.add(
                         "Booking{id=" + rs.getInt("id") +
-                                ", check_in=" + rs.getDate("check_in") +
-                                ", check_out=" + rs.getDate("check_out") +
-                                ", customer=" + rs.getString("name") +
                                 ", room=" + rs.getInt("room_number") +
+                                ", customer=" + rs.getString("name") +
+                                " (" + rs.getString("email") + ")" +
+                                ", in=" + rs.getDate("check_in") +
+                                ", out=" + rs.getDate("check_out") +
                                 "}"
                 );
             }
 
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            log.warning("getAllBookingsDetails error: " + e.getMessage());
+            throw new RuntimeException("load bookings failed");
         }
 
         return list;
     }
 
+    @Override
     public long calculateNights(LocalDate checkIn, LocalDate checkOut) {
         return java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
     }
