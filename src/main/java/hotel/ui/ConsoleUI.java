@@ -31,34 +31,33 @@ public class ConsoleUI {
                 continue;
             }
 
-            switch (choice) {
-                case 1:
-                    List<Room> rooms = controller.showAllRooms();
-                    rooms.forEach(System.out::println);
-                    break;
+            if (choice == 1) {
+                List<Room> rooms = controller.getAllRooms();
+                for (int i = 0; i < rooms.size(); i++) {
+                    System.out.println(rooms.get(i));
+                }
 
-                case 2:
-                    handleShowAvailableRooms();
-                    break;
+            } else if (choice == 2) {
+                handleShowAvailableRooms();
 
-                case 3:
-                    handleBookRoom();
-                    break;
+            } else if (choice == 3) {
+                handleBookRoom();
 
-                case 4:
-                    handleCancelBooking();
-                    break;
+            } else if (choice == 4) {
+                handleCancelBooking();
 
-                case 5:
-                    controller.showAllBookings().forEach(System.out::println);
-                    break;
+            } else if (choice == 5) {
+                List<String> bookings = controller.getAllBookings();
+                for (int i = 0; i < bookings.size(); i++) {
+                    System.out.println(bookings.get(i));
+                }
 
-                case 0:
-                    System.out.println("Goodbye!");
-                    return;
+            } else if (choice == 0) {
+                System.out.println("Goodbye!");
+                return;
 
-                default:
-                    System.out.println("Invalid option.");
+            } else {
+                System.out.println("Invalid option.");
             }
         }
     }
@@ -71,8 +70,10 @@ public class ConsoleUI {
             System.out.print("Enter check-out date (YYYY-MM-DD): ");
             LocalDate checkOut = controller.parseDate(scanner.nextLine());
 
-            controller.showAvailableRoomsForDates(checkIn, checkOut)
-                    .forEach(System.out::println);
+            List<Room> rooms = controller.getAvailableRoomsForDates(checkIn, checkOut);
+            for (int i = 0; i < rooms.size(); i++) {
+                System.out.println(rooms.get(i));
+            }
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
