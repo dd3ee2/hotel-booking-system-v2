@@ -25,10 +25,9 @@ public class BookingRepository implements IBookingRepository {
             ps.setDate(3, Date.valueOf(checkIn));
             ps.setDate(4, Date.valueOf(checkOut));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt("id");
-            }
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt("id");
 
         } catch (Exception e) {
             log.warning("createBooking error: " + e.getMessage());
@@ -50,10 +49,9 @@ public class BookingRepository implements IBookingRepository {
             ps.setDate(2, Date.valueOf(checkIn));
             ps.setDate(3, Date.valueOf(checkOut));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt(1) == 0;
-            }
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt(1) == 0;
 
         } catch (Exception e) {
             log.warning("isRoomAvailableForDates error: " + e.getMessage());
@@ -73,9 +71,8 @@ public class BookingRepository implements IBookingRepository {
 
             ps.setInt(1, roomId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("id");
-            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("id");
 
         } catch (Exception e) {
             log.warning("findActiveBookingIdByRoomId error: " + e.getMessage());
@@ -117,15 +114,14 @@ public class BookingRepository implements IBookingRepository {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                list.add(
-                        "Booking{id=" + rs.getInt("id") +
-                                ", room=" + rs.getInt("room_number") +
-                                ", customer=" + rs.getString("name") +
-                                " (" + rs.getString("email") + ")" +
-                                ", in=" + rs.getDate("check_in") +
-                                ", out=" + rs.getDate("check_out") +
-                                "}"
-                );
+                String line = "Booking{id=" + rs.getInt("id") +
+                        ", room=" + rs.getInt("room_number") +
+                        ", customer=" + rs.getString("name") +
+                        " (" + rs.getString("email") + ")" +
+                        ", in=" + rs.getDate("check_in") +
+                        ", out=" + rs.getDate("check_out") +
+                        "}";
+                list.add(line);
             }
 
         } catch (Exception e) {
