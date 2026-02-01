@@ -1,9 +1,13 @@
 package hotel.repository;
 
 import hotel.db.DatabaseConnection;
+import hotel.entity.BookingFullInfo;
 import hotel.util.LoggerUtil;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,5 +139,44 @@ public class BookingRepository implements IBookingRepository {
     @Override
     public long calculateNights(LocalDate checkIn, LocalDate checkOut) {
         return java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
+    }
+
+    @Override
+    public BookingFullInfo getFullBookingInfo(int bookingId) {
+        String sql =
+                "SELECT b.id, b.check_in, b.check_out, " +
+                        "c.name AS customer_name, c.email AS customer_email, " +
+                        "r.room_number, r.price_per_night, rc.name AS category_name " +
+                        "FROM bookings b " +
+                        "JOIN customers c ON b.customer_id = c.id " +
+                        "JOIN rooms r ON b.room_id = r.id " +
+                        "JOIN room_categories rc ON r.category_id = rc.id " +
+                        "WHERE b.id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, bookingId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new BookingFullInfo(
+                        rs.getInt("id"),
+                        rs.getDate("check_in").toLocalDate(),
+                        rs.getDate("check_out").toLocalDate(),
+                        rs.getString("customer_name"),
+                        rs.getString("customer_email"),
+                        rs.getInt("room_number"),
+                        rs.getString("category_name"),
+                        rs.getDouble("price_per_night")
+                );
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            log.warning("getFullBookingInfo error: " + e.getMessage());
+            throw new RuntimeException("load full booking failed");
+        }
     }
 }
