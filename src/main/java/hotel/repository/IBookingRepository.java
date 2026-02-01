@@ -1,5 +1,7 @@
 package hotel.repository;
 
+import hotel.entity.BookingFullInfo;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,4 +12,6 @@ public interface IBookingRepository {
     void deleteBookingById(int bookingId);
     List<String> getAllBookingsDetails();
     long calculateNights(LocalDate checkIn, LocalDate checkOut);
+
+    BookingFullInfo getFullBookingInfo(int bookingId);
 }
