@@ -1,8 +1,13 @@
 package hotel.controller;
 
+import hotel.auth.AuthContext;
+import hotel.auth.Role;
+import hotel.entity.BookingFullInfo;
 import hotel.entity.Room;
+import hotel.factory.RepositoryFactory;
 import hotel.repository.*;
 import hotel.util.LoggerUtil;
+import hotel.util.ValidatorUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -13,9 +18,9 @@ public class BookingController {
 
     private static final Logger log = LoggerUtil.getLogger();
 
-    private final IRoomRepository roomRepository = new RoomRepository();
-    private final IBookingRepository bookingRepository = new BookingRepository();
-    private final ICustomerRepository customerRepository = new CustomerRepository();
+    private final IRoomRepository roomRepository = RepositoryFactory.createRoomRepository();
+    private final IBookingRepository bookingRepository = RepositoryFactory.createBookingRepository();
+    private final ICustomerRepository customerRepository = RepositoryFactory.createCustomerRepository();
 
     public List<Room> getAllRooms() {
         log.info("Get all rooms");
@@ -23,26 +28,42 @@ public class BookingController {
     }
 
     public List<Room> getAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut) {
-        if (!checkOut.isAfter(checkIn)) {
-            log.warning("Invalid dates: " + checkIn + " -> " + checkOut);
-            throw new IllegalArgumentException("Invalid dates.");
-        }
-        log.info("Get available rooms for: " + checkIn + " -> " + checkOut);
-        return roomRepository.getAvailableRoomsForDates(checkIn, checkOut);
+        ValidatorUtil.checkDates(checkIn, checkOut);
+        log.info("Get available rooms: " + checkIn + " -> " + checkOut);
+
+        List<Room> rooms = roomRepository.getAvailableRoomsForDates(checkIn, checkOut);
+
+        rooms.sort((a, b) -> Integer.compare(a.getRoomNumber(), b.getRoomNumber()));
+
+        return rooms;
     }
 
     public List<String> getAllBookings() {
+        checkRole(Role.MANAGER);
         log.info("Get all bookings");
         return bookingRepository.getAllBookingsDetails();
+    }
+
+    public BookingFullInfo getFullBookingInfo(int bookingId) {
+        checkRole(Role.MANAGER);
+        log.info("Get full booking info: " + bookingId);
+
+        if (bookingId <= 0) throw new IllegalArgumentException("bookingId must be positive");
+
+        return bookingRepository.getFullBookingInfo(bookingId);
     }
 
     public String bookRoom(int roomNumber, String name, String email,
                            LocalDate checkIn, LocalDate checkOut) {
 
-        if (roomNumber <= 0) return "Room number must be positive.";
-        if (name == null || name.trim().isEmpty()) return "Name is empty.";
-        if (email == null || !email.contains("@")) return "Email is invalid.";
-        if (!checkOut.isAfter(checkIn)) return "Invalid dates.";
+        try {
+            ValidatorUtil.checkRoomNumber(roomNumber);
+            ValidatorUtil.checkName(name);
+            ValidatorUtil.checkEmail(email);
+            ValidatorUtil.checkDates(checkIn, checkOut);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
 
         Room room = roomRepository.findByRoomNumber(roomNumber);
         if (room == null) return "Room not found.";
@@ -69,6 +90,10 @@ public class BookingController {
     }
 
     public String cancelBooking(int roomNumber) {
+        checkRole(Role.ADMIN);
+
+        ValidatorUtil.checkRoomNumber(roomNumber);
+
         Room room = roomRepository.findByRoomNumber(roomNumber);
         if (room == null) return "Room not found.";
 
@@ -88,5 +113,20 @@ public class BookingController {
             log.warning("Wrong date format: " + value);
             throw new IllegalArgumentException("Wrong date format");
         }
+    }
+
+    private void checkRole(Role minRole) {
+        Role current = AuthContext.getInstance().getCurrentRole();
+
+        boolean allowed = isAllowed(current, minRole);
+        if (!allowed) {
+            throw new IllegalStateException("Access denied for role: " + current);
+        }
+    }
+
+    private boolean isAllowed(Role current, Role minRole) {
+        if (minRole == Role.USER) return true;
+        if (minRole == Role.MANAGER) return current == Role.MANAGER || current == Role.ADMIN;
+        return current == Role.ADMIN;
     }
 }
