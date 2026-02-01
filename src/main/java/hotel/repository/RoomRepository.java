@@ -19,7 +19,12 @@ public class RoomRepository implements IRoomRepository {
     @Override
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
-        String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms ORDER BY room_number";
+
+        String sql =
+                "SELECT r.id, r.room_number, c.name AS category_name, r.price_per_night " +
+                        "FROM rooms r " +
+                        "JOIN room_categories c ON r.category_id = c.id " +
+                        "ORDER BY r.room_number";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -29,7 +34,7 @@ public class RoomRepository implements IRoomRepository {
                 Room room = new Room(
                         rs.getInt("id"),
                         rs.getInt("room_number"),
-                        rs.getString("room_type"),
+                        rs.getString("category_name"),
                         rs.getDouble("price_per_night")
                 );
                 rooms.add(room);
@@ -45,7 +50,11 @@ public class RoomRepository implements IRoomRepository {
 
     @Override
     public Room findByRoomNumber(int roomNumber) {
-        String sql = "SELECT id, room_number, room_type, price_per_night FROM rooms WHERE room_number = ?";
+        String sql =
+                "SELECT r.id, r.room_number, c.name AS category_name, r.price_per_night " +
+                        "FROM rooms r " +
+                        "JOIN room_categories c ON r.category_id = c.id " +
+                        "WHERE r.room_number = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -57,7 +66,7 @@ public class RoomRepository implements IRoomRepository {
                 return new Room(
                         rs.getInt("id"),
                         rs.getInt("room_number"),
-                        rs.getString("room_type"),
+                        rs.getString("category_name"),
                         rs.getDouble("price_per_night")
                 );
             }
@@ -75,8 +84,9 @@ public class RoomRepository implements IRoomRepository {
         List<Room> rooms = new ArrayList<>();
 
         String sql =
-                "SELECT r.id, r.room_number, r.room_type, r.price_per_night " +
+                "SELECT r.id, r.room_number, c.name AS category_name, r.price_per_night " +
                         "FROM rooms r " +
+                        "JOIN room_categories c ON r.category_id = c.id " +
                         "WHERE r.id NOT IN ( " +
                         "   SELECT b.room_id FROM bookings b " +
                         "   WHERE NOT (b.check_out <= ? OR b.check_in >= ?) " +
@@ -94,7 +104,7 @@ public class RoomRepository implements IRoomRepository {
                 Room room = new Room(
                         rs.getInt("id"),
                         rs.getInt("room_number"),
-                        rs.getString("room_type"),
+                        rs.getString("category_name"),
                         rs.getDouble("price_per_night")
                 );
                 rooms.add(room);

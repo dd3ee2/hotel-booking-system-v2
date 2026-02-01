@@ -3,16 +3,16 @@ package hotel.entity;
 public class Room {
     private int id;
     private int roomNumber;
-    private String roomType;
+    private String categoryName;
     private double pricePerNight;
 
     public Room() {
     }
 
-    public Room(int id, int roomNumber, String roomType, double pricePerNight) {
+    public Room(int id, int roomNumber, String categoryName, double pricePerNight) {
         this.id = id;
         this.roomNumber = roomNumber;
-        this.roomType = roomType;
+        this.categoryName = categoryName;
         this.pricePerNight = pricePerNight;
     }
 
@@ -24,8 +24,8 @@ public class Room {
         return roomNumber;
     }
 
-    public String getRoomType() {
-        return roomType;
+    public String getCategoryName() {
+        return categoryName;
     }
 
     public double getPricePerNight() {
@@ -40,8 +40,8 @@ public class Room {
         this.roomNumber = roomNumber;
     }
 
-    public void setRoomType(String roomType) {
-        this.roomType = roomType;
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public void setPricePerNight(double pricePerNight) {
@@ -53,7 +53,7 @@ public class Room {
         return "Room{" +
                 "id=" + id +
                 ", roomNumber=" + roomNumber +
-                ", roomType='" + roomType + '\'' +
+                ", categoryName='" + categoryName + '\'' +
                 ", pricePerNight=" + pricePerNight +
                 '}';
     }
